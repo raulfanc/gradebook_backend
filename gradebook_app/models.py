@@ -1,6 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django_extensions.db.models import TimeStampedModel
+from model_utils import FieldTracker
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from django.core.mail import send_mail
+
+from gradebook_app_2 import settings
 
 
 # ==================Base Models==================
@@ -88,8 +96,10 @@ class Class(models.Model):
 # ==============end of Base Models=============
 
 
-class Enrolment(models.Model):
-    enrolled_student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True, db_column='studentID')
+class Enrolment(TimeStampedModel):
+    # TimeStampedModel is subclass of Django's Model class, so it has all the same methods and attributes
+    enrolled_student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True,
+                                         db_column='studentID')
     enrolled_class = models.ForeignKey(Class, on_delete=models.CASCADE, db_column='classID')
     enrollment_date = models.DateField(auto_now_add=True)
     grade_date = models.DateField(blank=True, null=True)
@@ -100,3 +110,21 @@ class Enrolment(models.Model):
 
     def __str__(self):
         return f"{self.enrolled_student} - {self.enrolled_class}"
+
+    tracker = FieldTracker()
+
+
+# using signal to email grade to student when grade is updated
+@receiver(post_save, sender=Enrolment)
+def notify_student(sender, instance, **kwargs):
+    if instance.tracker.has_changed('grade') and instance.grade is not None:
+        student_email = instance.enrolled_student.email
+        subject = "Your Grade is Available"
+        message = f"Dear {instance.enrolled_student},\n\nYour grade for {instance.enrolled_class} is now available. Please log in to the Gradebook to view your grade.\n\nBest regards,\n{instance.enrolled_class.lecturer}\nLecturer"
+        from_email = settings.DEFAULT_FROM_EMAIL  # Uses the default email in settings.py
+
+        try:
+            send_mail(subject, message, from_email, [student_email])
+            print(f"Email sent to {instance.enrolled_student}.")
+        except Exception as e:
+            print(str(e))

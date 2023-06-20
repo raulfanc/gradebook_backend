@@ -52,6 +52,8 @@ class LecturerSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer(write_only=True)
+    # display only fields: username in the user model
+    user = serializers.ReadOnlyField(source='user.username')
 
     class Meta:
         model = Student
