@@ -26,6 +26,11 @@ def enter_student_marks(request):
 @api_view(['GET'])
 @permission_classes([IsLecturer | IsStudent | IsAdminUser])
 def view_student_marks(request, student_id):
+    if request.user.groups.filter(name="student").exists() and student_id != request.user.student_profile.id:
+        return Response({'error': 'You are not authorized to view marks for this student.'},
+                        status=status.HTTP_403_FORBIDDEN)
+
     enrolments = Enrolment.objects.filter(enrolled_student_id=student_id)
     serializer = EnrolmentSerializer(enrolments, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
