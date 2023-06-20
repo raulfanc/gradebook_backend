@@ -1,12 +1,16 @@
+import pandas as pd
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 
+from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework import views, status, permissions
+from rest_framework.parsers import FileUploadParser
+from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
-from .models import Enrolment
+from .models import Enrolment, Student, Lecturer
 from .permissions import IsLecturer, IsStudent
 from .serializers import EnrolmentSerializer
 
@@ -39,7 +43,7 @@ def view_student_marks(request, student_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class LecturerLoginView(views.APIView):
+class LecturerLoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -56,7 +60,7 @@ class LecturerLoginView(views.APIView):
 LecturerLoginView = LecturerLoginView.as_view()
 
 
-class StudentLoginView(views.APIView):
+class StudentLoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -71,3 +75,40 @@ class StudentLoginView(views.APIView):
 
 
 StudentLoginView = StudentLoginView.as_view()
+
+
+class UploadStudentView(APIView):
+    parser_class = (FileUploadParser,)
+    permission_classes = [IsAdminUser]  # Only allow admin users to access this view
+
+    def post(self, request, *args, **kwargs):
+
+        file = request.data['file']
+        data = pd.read_excel(file)
+
+        for index, item in data.iterrows():
+            first_name = item['firstname']
+            last_name = item['lastname']
+            username = item['username']
+            email = item['email']
+            dob = item['dob']
+            group_name = item['group'].lower()
+
+            if User.objects.filter(username=username).exists():
+                continue
+
+            default_password = '123'
+            user = User.objects.create_user(username, email, default_password)
+            user.first_name = first_name
+            user.last_name = last_name
+            user.save()
+
+            if group_name == 'student':
+                Student.objects.create(user=user, firstname=first_name, lastname=last_name, email=email, DOB=dob)
+            elif group_name == 'lecturer':
+                Lecturer.objects.create(user=user, firstname=first_name, lastname=last_name, email=email, DOB=dob)
+
+        return Response(status=status.HTTP_201_CREATED)
+
+
+UploadStudentView = UploadStudentView.as_view()
