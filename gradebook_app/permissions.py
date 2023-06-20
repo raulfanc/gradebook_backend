@@ -1,11 +1,6 @@
 from rest_framework import permissions
 
 
-class IsAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.groups.filter(name="Administrator").exists()
-
-
 class IsLecturer(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.groups.filter(name="lecturer").exists()
@@ -23,8 +18,9 @@ class IsStudent(permissions.BasePermission):
         return request.user.groups.filter(name="student").exists()
 
     def has_object_permission(self, request, view, obj):
-        # Students can only view their own grades
+        # Students can only view their own grades, not update them
         if request.method == 'GET':
             return obj.enrolled_student.user == request.user
 
         return False
+

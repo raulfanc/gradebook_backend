@@ -1,4 +1,3 @@
-from django.contrib.auth.models import Group, User
 from rest_framework import serializers
 
 from .models import *
@@ -36,7 +35,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 class LecturerSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(write_only=True)
 
     class Meta:
         model = Lecturer
@@ -52,7 +51,7 @@ class LecturerSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(write_only=True)
 
     class Meta:
         model = Student
@@ -68,10 +67,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class ClassSerializer(serializers.ModelSerializer):
-    # # display purpose only fields below:
-    # semester = SemesterSerializer(read_only=True)
-    # course = CourseSerializer(read_only=True)
-    # lecturer = LecturerSerializer(read_only=True)
+    lecturer = LecturerSerializer(read_only=True)
 
     class Meta:
         model = Class
