@@ -16,9 +16,13 @@ router.register("enrolment", EnrolmentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+
+    path('auth/lecturer/', LecturerLoginView, name='lecturer_login'),
+    path('auth/student/', StudentLoginView, name='student_login'),
+
+    path('manage-class-lecturer/<int:class_id>/', views.manage_class_lecturer, name='manage-class-lecturer'),
+    path('manage-class-enrolment/<int:class_id>/', views.manage_class_enrolment, name='manage-class-enrolment'),
     path('enter_student_marks/', views.enter_student_marks, name='enter_student_marks'),
     path('view_student_marks/<int:student_id>/', views.view_student_marks, name='view_student_marks'),
     path('upload_students/', UploadStudentView, name='upload_students'),
-    path('auth/lecturer/', LecturerLoginView, name='lecturer_login'),
-    path('auth/student/', StudentLoginView, name='student_login'),
 ]
